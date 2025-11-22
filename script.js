@@ -223,6 +223,57 @@ document.addEventListener("DOMContentLoaded", () => {
       if (initialFiles) {
         this.handleImageUpload(initialFiles);
       }
+
+      // Setup Touch Gestures for Pinch Zoom
+      this.setupTouchGestures();
+    },
+
+    setupTouchGestures() {
+      const canvas = App.state.canvas;
+      if (!canvas || !canvas.upperCanvasEl) return;
+
+      const upperCanvasEl = canvas.upperCanvasEl;
+      let initialDistance = 0;
+      let initialScale = 1;
+      let isPinching = false;
+
+      upperCanvasEl.addEventListener('touchstart', (e) => {
+        if (e.touches.length === 2) {
+          const obj = canvas.getActiveObject();
+          if (obj) {
+            isPinching = true;
+            const touch1 = e.touches[0];
+            const touch2 = e.touches[1];
+            initialDistance = Math.hypot(touch2.clientX - touch1.clientX, touch2.clientY - touch1.clientY);
+            initialScale = obj.scaleX; // Assuming uniform scale
+            // Prevent default to stop browser zoom/scroll
+            e.preventDefault();
+          }
+        }
+      }, { passive: false });
+
+      upperCanvasEl.addEventListener('touchmove', (e) => {
+        if (isPinching && e.touches.length === 2) {
+          const obj = canvas.getActiveObject();
+          if (obj) {
+            const touch1 = e.touches[0];
+            const touch2 = e.touches[1];
+            const dist = Math.hypot(touch2.clientX - touch1.clientX, touch2.clientY - touch1.clientY);
+            
+            if (initialDistance > 10) { // Threshold to avoid jitter
+              const scale = initialScale * (dist / initialDistance);
+              // Limit min/max scale if needed, but for now let it be free
+              obj.set({ scaleX: scale, scaleY: scale });
+              canvas.requestRenderAll();
+            }
+            e.preventDefault();
+          }
+        }
+      }, { passive: false });
+
+      upperCanvasEl.addEventListener('touchend', () => {
+        isPinching = false;
+      });
     },
 
     updateDimensions() {
@@ -377,45 +428,33 @@ document.addEventListener("DOMContentLoaded", () => {
         const targetSize = App.state.slideWidth * 0.9;
         const scale = targetSize / Math.max(img.width, img.height);
         
-        let left, top;
+        let clientX, clientY;
 
         if (dropEvent) {
-          // Calculate drop position relative to canvas
-          const canvasRect = this.elements.canvasWrapper.getBoundingClientRect();
-          const scaleFactor = App.state.scaleFactor;
-          
-          const clientX = dropEvent.clientX;
-          const clientY = dropEvent.clientY;
-          
-          // Position inside the SCALED wrapper
-          const relativeX = clientX - canvasRect.left;
-          const relativeY = clientY - canvasRect.top;
-          
-          // Convert to UN-SCALED canvas coordinates
-          left = relativeX / scaleFactor - (img.width * scale) / 2;
-          top = relativeY / scaleFactor - (img.height * scale) / 2;
+          clientX = dropEvent.clientX;
+          clientY = dropEvent.clientY;
         } else {
-          // Center of CURRENT VIEWPORT
-          const scaleFactor = App.state.scaleFactor;
-          const scrollContainer = this.elements.editorCanvasContainer;
-          
-          // Get center of visible area relative to the container
-          const visibleCenterX = scrollContainer.scrollLeft + scrollContainer.clientWidth / 2;
-          const visibleCenterY = scrollContainer.scrollTop + scrollContainer.clientHeight / 2;
-          
-          // The canvas wrapper might be smaller than scroll area if zoomed out, but usually it's larger.
-          // We need to map this visible center to canvas coordinates.
-          // The canvas wrapper is scaled by scaleFactor.
-          
-          // Convert visible center to unscaled canvas coordinates
-          // Note: We assume the canvas wrapper is at (0,0) of the scroll container's content area
-          left = visibleCenterX / scaleFactor - (img.width * scale) / 2;
-          top = visibleCenterY / scaleFactor - (img.height * scale) / 2;
-          
-          // Ensure it's within bounds (optional, but good for safety)
-          left = Math.max(0, Math.min(left, App.state.canvas.width - img.width * scale));
-          top = Math.max(0, Math.min(top, App.state.canvas.height - img.height * scale));
+          // Simulate drop at the center of the CURRENT VIEWPORT
+          const containerRect = this.elements.editorCanvasContainer.getBoundingClientRect();
+          clientX = containerRect.left + containerRect.width / 2;
+          clientY = containerRect.top + containerRect.height / 2;
         }
+
+        // Calculate position relative to canvas wrapper
+        const canvasRect = this.elements.canvasWrapper.getBoundingClientRect();
+        const scaleFactor = App.state.scaleFactor;
+        
+        // Position inside the SCALED wrapper
+        const relativeX = clientX - canvasRect.left;
+        const relativeY = clientY - canvasRect.top;
+        
+        // Convert to UN-SCALED canvas coordinates
+        let left = relativeX / scaleFactor - (img.width * scale) / 2;
+        let top = relativeY / scaleFactor - (img.height * scale) / 2;
+        
+        // Ensure it's within bounds (optional, but good for safety)
+        left = Math.max(0, Math.min(left, App.state.canvas.width - img.width * scale));
+        top = Math.max(0, Math.min(top, App.state.canvas.height - img.height * scale));
         
         img.set({
           scaleX: scale,
@@ -426,10 +465,10 @@ document.addEventListener("DOMContentLoaded", () => {
           cornerStyle: 'circle',
           borderColor: '#0070ff',
           transparentCorners: false,
-          // Mobile friendly settings
-          cornerSize: 40, // Much larger for touch
-          touchCornerSize: 60, // Extended touch area
-          padding: 10 // Extra padding for selection
+          // Mobile friendly settings - Drastically increased
+          cornerSize: 80, // Huge corners for easy touch
+          touchCornerSize: 120, // Extended touch area
+          padding: 20 // Extra padding for selection
         });
         
         App.state.canvas.add(img);
