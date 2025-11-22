@@ -395,11 +395,26 @@ document.addEventListener("DOMContentLoaded", () => {
           left = relativeX / scaleFactor - (img.width * scale) / 2;
           top = relativeY / scaleFactor - (img.height * scale) / 2;
         } else {
-          // Center of viewport (approx)
-          // We need to find the center of the CURRENTLY VISIBLE part of the canvas
-          // But for simplicity, let's just put it in the center of the first slide or the whole canvas
-          left = (App.state.canvas.width - img.width * scale) / 2;
-          top = (App.state.canvas.height - img.height * scale) / 2;
+          // Center of CURRENT VIEWPORT
+          const scaleFactor = App.state.scaleFactor;
+          const scrollContainer = this.elements.editorCanvasContainer;
+          
+          // Get center of visible area relative to the container
+          const visibleCenterX = scrollContainer.scrollLeft + scrollContainer.clientWidth / 2;
+          const visibleCenterY = scrollContainer.scrollTop + scrollContainer.clientHeight / 2;
+          
+          // The canvas wrapper might be smaller than scroll area if zoomed out, but usually it's larger.
+          // We need to map this visible center to canvas coordinates.
+          // The canvas wrapper is scaled by scaleFactor.
+          
+          // Convert visible center to unscaled canvas coordinates
+          // Note: We assume the canvas wrapper is at (0,0) of the scroll container's content area
+          left = visibleCenterX / scaleFactor - (img.width * scale) / 2;
+          top = visibleCenterY / scaleFactor - (img.height * scale) / 2;
+          
+          // Ensure it's within bounds (optional, but good for safety)
+          left = Math.max(0, Math.min(left, App.state.canvas.width - img.width * scale));
+          top = Math.max(0, Math.min(top, App.state.canvas.height - img.height * scale));
         }
         
         img.set({
@@ -410,7 +425,11 @@ document.addEventListener("DOMContentLoaded", () => {
           cornerColor: '#0070ff',
           cornerStyle: 'circle',
           borderColor: '#0070ff',
-          transparentCorners: false
+          transparentCorners: false,
+          // Mobile friendly settings
+          cornerSize: 40, // Much larger for touch
+          touchCornerSize: 60, // Extended touch area
+          padding: 10 // Extra padding for selection
         });
         
         App.state.canvas.add(img);
