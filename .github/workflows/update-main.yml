@@ -17,5 +17,5 @@ jobs:
           git config user.email "action@github.com"
           git config user.name "Auto Bot"
           git submodule update --remote ig-carousel
-          git add ig-seamless-carousel
-          git diff --quiet && git diff --staged --quiet || (git commit -m "Update ig-seamless-carousel tool" && git push)
+          git add ig-carousel
+          git diff --quiet && git diff --staged --quiet || (git commit -m "Update ig-carousel tool" && git push)
