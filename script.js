@@ -192,13 +192,16 @@ document.addEventListener("DOMContentLoaded", () => {
       // Initialize Fabric Canvas
       if (App.state.canvas) {
         App.state.canvas.dispose();
+        App.state.canvas = null;
       }
 
       App.state.canvas = new fabric.Canvas('fabricCanvas', {
         width: totalWidth,
         height: totalHeight,
         backgroundColor: '#ffffff',
-        preserveObjectStacking: true
+        preserveObjectStacking: true,
+        renderOnAddRemove: true,
+        enableRetinaScaling: false // Disable for Safari performance
       });
 
       // Set initial background color
@@ -319,9 +322,20 @@ document.addEventListener("DOMContentLoaded", () => {
       if (!files || files.length === 0) return;
 
       Array.from(files).forEach((file) => {
+        // Safari memory limit: skip files larger than 10MB
+        const maxSize = 10 * 1024 * 1024; // 10MB
+        if (file.size > maxSize) {
+          alert(`파일이 너무 큽니다: ${file.name}\n최대 10MB까지 업로드 가능합니다.`);
+          return;
+        }
+
         const reader = new FileReader();
         reader.onload = (f) => {
           this.addToGallery(f.target.result);
+        };
+        reader.onerror = (error) => {
+          console.error('FileReader error:', error);
+          alert(`이미지 로드 실패: ${file.name}\n다시 시도해주세요.`);
         };
         reader.readAsDataURL(file);
       });
@@ -353,6 +367,12 @@ document.addEventListener("DOMContentLoaded", () => {
 
     addImageToCanvas(imageSrc, dropEvent = null) {
       fabric.Image.fromURL(imageSrc, (img) => {
+        if (!img) {
+          console.error('Failed to load image');
+          alert('이미지 로드에 실패했습니다. 다시 시도해주세요.');
+          return;
+        }
+
         // Scale image to fit roughly one slide
         const targetSize = App.state.slideWidth * 0.9;
         const scale = targetSize / Math.max(img.width, img.height);
@@ -395,6 +415,9 @@ document.addEventListener("DOMContentLoaded", () => {
         
         App.state.canvas.add(img);
         App.state.canvas.setActiveObject(img);
+        App.state.canvas.renderAll();
+      }, {
+        crossOrigin: 'anonymous' // Critical for Safari CORS compatibility
       });
     },
 
