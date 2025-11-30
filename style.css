@@ -469,6 +469,7 @@ input[type="color"]::-moz-color-swatch {
 }
 
 /* --- Safari 하단 주소창 대응 --- */
+/* --- Safari 하단 주소창 대응 --- */
 .app-container {
   padding-bottom: env(safe-area-inset-bottom);
 }
@@ -476,5 +477,12 @@ input[type="color"]::-moz-color-swatch {
 .card-footer,
 .card-footer-simple,
 .card-footer.button-group {
-  padding-bottom: calc(24px + env(safe-area-inset-bottom));
+  padding-bottom: calc(24px + env(safe-area-inset-bottom)) !important;
+}
+
+/* (v8.3) 에디터 하단 트레이 대응 */
+.gallery-tray {
+  padding-bottom: calc(16px + env(safe-area-inset-bottom)) !important;
+  height: auto !important; /* 고정 높이 해제 */
+  min-height: 140px;
 }
