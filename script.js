@@ -47,9 +47,26 @@ document.addEventListener("DOMContentLoaded", () => {
       galleryNextBtn: document.getElementById('galleryNextBtn'),
     },
 
+    ui: {
+      // Placeholder for UI related methods
+      setAppHeight() {
+        document.documentElement.style.setProperty('--app-height', `${window.innerHeight}px`);
+      },
+      // Other UI methods would go here
+      goToStep(stepElement) {
+        // Implementation for goToStep
+      },
+      updateStepIndicator(stepNumber) {
+        // Implementation for updateStepIndicator
+      }
+    },
+
     init() {
       if (window.TossUI && window.TossUI.checkAndEscapeKakaoInApp()) return;
       
+      this.ui.setAppHeight();
+      window.addEventListener("resize", this.ui.setAppHeight);
+
       this.bindEvents();
     },
 
@@ -581,6 +598,15 @@ document.addEventListener("DOMContentLoaded", () => {
         if (targetStep === App.elements.step2Editor) {
           setTimeout(() => App.fitCanvasHeight(), 100);
         }
+      },
+
+      updateStepIndicator(stepNumber) {
+        // 스텝 인디케이터 업데이트 로직 (필요시 구현)
+      },
+
+      setAppHeight() {
+        const vh = window.innerHeight * 0.01;
+        document.documentElement.style.setProperty("--app-height", `${vh}px`);
       },
       
       setLoading(btn, text, isLoading = true) {
